@@ -50,22 +50,22 @@ export const SHOPS = {
 
 // opt：規格；add：加價
 export const PRODUCTS = {
-  p1: { n: '不鏽鋼保溫瓶 500ml', img: 'img/cup1.jpg', price: 399, rate: 4.9, sold: '1.2 萬', shop: 'warm', desc: '不鏽鋼保溫瓶 500ml｜12 小時保溫保冷，霧面不留指紋',
+  p1: { pack: '黑色小袋', n: '不鏽鋼保溫瓶 500ml', img: 'img/cup1.jpg', price: 399, rate: 4.9, sold: '1.2 萬', shop: 'warm', desc: '不鏽鋼保溫瓶 500ml｜12 小時保溫保冷，霧面不留指紋',
     kw: ['保溫瓶', '水壺', '不鏽鋼', '保冷'], ship: ['7-11 取貨', '全家取貨', '宅配'], from: '台灣', capB: '500ml 以下',
     opt: [{ n: '顏色', v: ['霧灰', '奶油白', '墨綠'] }, { n: '容量', v: ['500ml', '750ml'], add: [0, 60] }] },
-  p2: { n: '真空保溫瓶 750ml 墨綠', img: 'img/cup2.jpg', price: 459, rate: 4.8, sold: '8,214', shop: 'warm', desc: '真空保溫瓶 750ml｜雙層真空，大容量一天份',
+  p2: { pack: '中型紙箱', n: '真空保溫瓶 750ml 墨綠', img: 'img/cup2.jpg', price: 459, rate: 4.8, sold: '8,214', shop: 'warm', desc: '真空保溫瓶 750ml｜雙層真空，大容量一天份',
     kw: ['保溫瓶', '水壺', '真空', '大容量'], ship: ['7-11 取貨', '全家取貨', '蝦皮店到店'], from: '台灣', capB: '500–750ml',
     opt: [{ n: '顏色', v: ['墨綠', '霧灰'] }, { n: '容量', v: ['750ml'] }] },
-  p3: { n: '隨行咖啡杯 防漏蓋', img: 'img/cup3.jpg', price: 329, rate: 4.7, sold: '5,630', shop: 'warm', desc: '隨行咖啡杯｜防漏蓋，可放車用杯架',
+  p3: { pack: '白色小袋', n: '隨行咖啡杯 防漏蓋', img: 'img/cup3.jpg', price: 329, rate: 4.7, sold: '5,630', shop: 'warm', desc: '隨行咖啡杯｜防漏蓋，可放車用杯架',
     kw: ['咖啡杯', '隨行杯', '保溫瓶', '杯子'], ship: ['7-11 取貨', '宅配'], from: '海外', capB: '500ml 以下',
     opt: [{ n: '顏色', v: ['白', '黑'] }, { n: '容量', v: ['350ml', '500ml'], add: [0, 40] }] },
-  p4: { n: '馬卡龍保溫瓶 3 色', img: 'img/cup4.jpg', price: 499, rate: 4.9, sold: '3,105', shop: 'warm', desc: '馬卡龍保溫瓶｜粉、綠、橘三色，輕量好攜帶',
+  p4: { pack: '小型紙箱', n: '馬卡龍保溫瓶 3 色', img: 'img/cup4.jpg', price: 499, rate: 4.9, sold: '3,105', shop: 'warm', desc: '馬卡龍保溫瓶｜粉、綠、橘三色，輕量好攜帶',
     kw: ['保溫瓶', '水壺', '馬卡龍', '彩色'], ship: ['7-11 取貨', '全家取貨'], from: '台灣', capB: '500–750ml',
     opt: [{ n: '顏色', v: ['粉', '綠', '橘'] }, { n: '容量', v: ['600ml'] }] },
-  shirt: { n: '純棉短袖 T 恤', img: 'img/shirt.jpg', price: 290, rate: 4.8, sold: '1.2 萬', shop: 'cotton', desc: '純棉短袖 T 恤｜100% 棉，透氣不悶熱',
+  shirt: { pack: '灰色破壞袋', n: '純棉短袖 T 恤', img: 'img/shirt.jpg', price: 290, rate: 4.8, sold: '1.2 萬', shop: 'cotton', desc: '純棉短袖 T 恤｜100% 棉，透氣不悶熱',
     kw: ['T 恤', 't恤', '短袖', '衣服', '上衣'], ship: ['7-11 取貨', '全家取貨', '宅配'], from: '台灣', capB: '',
     opt: [{ n: '顏色', v: ['白色', '黑色'] }, { n: '尺寸', v: ['S', 'M', 'L', 'XL'] }] },
-  case: { n: '馬卡龍防摔手機殼', img: 'img/case.jpg', price: 250, rate: 4.8, sold: '9,870', shop: 'shell', desc: '馬卡龍防摔手機殼｜四角氣囊，附螢幕保護貼',
+  case: { pack: '小紙盒', n: '馬卡龍防摔手機殼', img: 'img/case.jpg', price: 250, rate: 4.8, sold: '9,870', shop: 'shell', desc: '馬卡龍防摔手機殼｜四角氣囊，附螢幕保護貼',
     kw: ['手機殼', 'iphone', '防摔', '殼'], ship: ['7-11 取貨', '蝦皮店到店'], from: '海外', capB: '',
     opt: [{ n: '顏色', v: ['粉', '藍', '綠'] }, { n: '型號', v: ['iPhone 15', 'iPhone 15 Pro'] }] },
 };
@@ -81,6 +81,19 @@ export const STORES = {
 };
 
 export const LABEL_STYLE = { 公司: { cls: '', ic: 'building' }, 住家: { cls: 'home', ic: 'house' }, 學校: { cls: 'ok', ic: 'school' } };
+
+// 研究背景：三位受訪者、Persona、同理心地圖（Hw1 小組訪談）
+export const RESEARCH = {
+  method: '訪談 3 位常用超商取貨的蝦皮買家，並做淘寶、PChome 24h 競品分析。',
+  people: [
+    { n: '杜軒逸', pain: '狀態難辨', ic: 'truck', q: '5、6 件只到一半，我以為全部到了，多跑一趟。', d: '在學校或通勤時查看，要從「我的 → 待收貨」逐筆確認哪幾件到了。', want: '已到店和運送中分開；首頁就看到今日待取' },
+    { n: 'Amber', pain: '門市難辨', ic: 'store', q: '住家、公司門市的包裹混在一起，走到貨架前才搞不清這家有幾件。', d: '包裹分批寄到住家店和公司店；站在貨架前才搞不清這家有幾件，又重開 App，結果漏拿或跑錯店。', want: '依門市分開；在店裡能對照清單拿齊' },
+    { n: '林奕辰', pain: '條碼難找', ic: 'zap', q: '點推播只開到首頁，還要自己找條碼。', d: '櫃檯前才退回首頁 → 我的 → 待收貨 → 點進去找條碼，很怕誤觸完成訂單。', want: '推播直接打開取件條碼' },
+  ],
+  persona: { n: 'Amber', meta: '23 歲｜台北上班族', basis: 'Persona 以受訪者 Amber 為原型，再綜合三人的痛點與期待。',
+    rows: [['情境', '通勤時下單，常有好幾件包裹在路上，下班後才去門市取件'], ['目標', '一眼知道今天能拿幾件、在哪家店，不白跑'], ['痛點', '分不清已到店，多件要逐筆點開，條碼藏太深難找'], ['需求', '今日待取彙整、依門市分組、推播直達條碼']] },
+  empathy: [['聽到', '店員問「末三碼？有幾件？」'], ['看到', '一長串卡片長得一樣，狀態字又小又淡'], ['說與做', '等通知才開 App，在櫃檯前慌忙找條碼'], ['想與感受', '今天能拿幾件？到底在哪家店？'], ['痛點', '跑錯店、漏拿件，排隊時找不到條碼'], ['期待', '今日待取、依門市分開、推播直達']],
+};
 
 export const HOT = ['保溫瓶', 'T 恤', '手機殼', '咖啡杯'];
 
@@ -102,12 +115,13 @@ export function initialState() {
       { id: 'o1', no: '4821', p: 'p1', spec: ['霧灰', '500ml'], qty: 1, price: 399, store: 's1', status: 'ready', deadline: 5, placed: -4 },
       { id: 'o2', no: '1093', p: 'shirt', spec: ['白色', 'L'], qty: 1, price: 290, store: 's1', status: 'ready', deadline: 6, placed: -3 },
       { id: 'o3', no: '7756', p: 'case', spec: ['粉', 'iPhone 15'], qty: 1, price: 250, store: 's1', status: 'ready', deadline: 6, placed: -3 },
-      { id: 'o4', no: '5307', p: 'p2', spec: ['墨綠', '750ml'], qty: 1, price: 459, store: 's2', status: 'ship', eta: 3, placed: -1 },
+      { id: 'o4', no: '5307', p: 'p2', spec: ['墨綠', '750ml'], qty: 1, price: 459, store: 's2', status: 'ready', deadline: 7, placed: -2 },
+      { id: 'o7', no: '2648', p: 'p4', spec: ['綠', '600ml'], qty: 1, price: 499, store: 's2', status: 'ship', eta: 3, placed: -1 },
       { id: 'o5', no: '6620', p: 'p4', spec: ['粉', '600ml'], qty: 1, price: 499, store: 's2', status: 'done', picked: -10, placed: -16, rated: false },
       { id: 'o6', no: '3381', p: 'p3', spec: ['黑', '350ml'], qty: 1, price: 329, store: 's1', status: 'cancel', placed: -20 },
     ],
     favs: [{ id: 'f1', label: '公司', store: 's1' }, { id: 'f2', label: '住家', store: 's2' }],
-    defaults: { weekday: 'f1', weekend: 'f2' },
+    lastStore: 's1',
     cart: [{ id: 'k1', p: 'shirt', spec: ['黑色', 'M'], qty: 1, on: true }],
     coins: 1280,
     coinLog: [{ t: '完成評價', v: 15, d: -10 }, { t: '每日簽到', v: 5, d: 0 }],
@@ -116,6 +130,7 @@ export function initialState() {
     notifyOn: true,
     notifs: [
       { id: 'n1', ic: 'package', t: '3 件包裹已到 7-11 信義公司門市', b: '點一下直接出示整合條碼，取件期限 12/05', d: 1, time: '18:32', read: false, go: 'barcode/s1', kind: 'arrive', store: 's1' },
+      { id: 'n5', ic: 'package', t: '1 件包裹已到全家 永和住家門市', b: '點一下直接出示整合條碼，取件期限 12/07', d: 0, time: '20:14', read: true, go: 'barcode/s2', kind: 'arrive', store: 's2' },
       { id: 'n2', ic: 'truck', t: '1 件包裹運送中', b: '預計 12/03 到全家 永和住家門市', d: 1, time: '09:10', read: false, go: 'orders/ship', kind: 'ship' },
       { id: 'n3', ic: 'checkCircle', t: '訂單已完成', b: '馬卡龍保溫瓶｜評價可得 5 蝦幣', d: -10, time: '20:05', read: true, go: 'orders/done', kind: 'done' },
       { id: 'n4', ic: 'ticket', t: '雙 11 延長賽｜全站免運', b: '免運券已放進你的票券', d: 0, time: '12:00', read: true, go: 'coupons', kind: 'promo' },

@@ -1,9 +1,9 @@
-import { ICONS, SHOPS, PRODUCTS as P, STORES, LABEL_STYLE, HOT, COUPON_POOL, fmtDay, weekday, initialState } from './data.js';
+import { ICONS, SHOPS, PRODUCTS as P, STORES, LABEL_STYLE, HOT, COUPON_POOL, RESEARCH, fmtDay, weekday, initialState } from './data.js';
 
 /* ========== 狀態 ========== */
-const KEY = 'shopee-pickup-proto-v1';
+const KEY = 'shopee-pickup-proto-v2';
 let S = load();
-const ui = { sort: '綜合', q: '', filter: blankFilter(), pickTab: 'ready', notifTab: '物流', sel: null, co: null, lastPicked: [], lastOrder: [], addLabel: '學校', addCustom: '', preferStore: null, dialog: null, storeQ: '' };
+const ui = { sort: '綜合', q: '', filter: blankFilter(), pickTab: 'ready', notifTab: '物流', sel: null, co: null, lastPicked: [], lastOrder: [], addLabel: '學校', addCustom: '', dialog: null, storeQ: '' };
 function blankFilter() { return { ship: [], rate: '', from: [], cap: [], min: '', max: '' }; }
 function load() { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.orders) return Object.assign(initialState(), s); } catch (e) {} return initialState(); }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -25,9 +25,7 @@ const byStatus = st => S.orders.filter(o => o.status === st);
 const readyByStore = () => { const g = {}; byStatus('ready').forEach(o => (g[o.store] = g[o.store] || []).push(o)); return g; };
 const unread = () => S.notifs.filter(n => !n.read).length;
 const cartCount = () => S.cart.reduce((a, c) => a + c.qty, 0);
-const isWeekend = d => ['六', '日'].includes(weekday(d));
-const defaultFav = () => S.favs.find(f => f.id === (isWeekend(S.day) ? S.defaults.weekend : S.defaults.weekday)) || S.favs[0];
-const shipStore = () => ui.preferStore || (defaultFav() ? defaultFav().store : 's3');
+const shipStore = () => S.lastStore || 's1';
 const dayLabel = d => `${fmtDay(d)}（${weekday(d)}）`;
 const dateOf = d => d > 0 ? fmtDay(d) : `11/${String(30 + d).padStart(2, '0')}`;
 function barcode(code) {
@@ -52,7 +50,7 @@ const hdr = (title, opt = {}) => `<div class="hdr">${sb()}<div class="bar ${opt.
 const TABS = [['home', '首頁', 'home'], ['results', '搜尋', 'search'], ['pickup', '取件', 'package'], ['notifs', '通知', 'bell'], ['me', '我的', 'user']];
 const tabbar = on => `<nav class="tabbar">${TABS.map(([r, l, i]) => `<button data-a="tab" data-r="${r}" class="${on === r ? 'on' : ''}" ${on === r ? 'aria-current="page"' : ''}>${ic(i)}${l}${r === 'notifs' && unread() ? `<span class="badge">${unread()}</span>` : ''}${r === 'pickup' && byStatus('ready').length ? `<span class="badge">${byStatus('ready').length}</span>` : ''}</button>`).join('')}</nav>`;
 const cartBtn = () => `<button class="ib" data-a="go" data-r="cart" aria-label="購物車">${ic('cart', 26)}${cartCount() ? `<span class="badge">${cartCount()}</span>` : ''}</button>`;
-const pcard = (k, showShip) => { const p = P[k]; return `<button class="pcard press" data-a="go" data-r="product/${k}"><img src="${p.img}" alt="${esc(p.n)}" loading="lazy"><div class="t"><div class="n">${esc(p.n)}</div>${showShip ? `<div class="row" style="gap:4px">${p.ship.includes('7-11 取貨') ? '<span class="tag ok">7-11 取貨</span>' : ''}${p.ship.includes('全家取貨') ? '<span class="tag home">全家</span>' : ''}</div>` : ''}<div class="row" style="justify-content:space-between;margin-top:auto"><span class="price">${money(p.price)}</span><span class="sub small">${showShip ? '★ ' + p.rate : '已售 ' + p.sold}</span></div></div></button>`; };
+const pcard = (k, showShip) => { const p = P[k]; return `<button class="pcard press" data-a="go" data-r="product/${k}"><img src="${p.img}" alt="${esc(p.n)}" loading="lazy"><div class="t"><div class="n">${esc(p.n)}</div><div class="row" style="justify-content:space-between;margin-top:auto"><span class="price">${money(p.price)}</span><span class="sub small">${showShip ? '★ ' + p.rate : '已售 ' + p.sold}</span></div></div></button>`; };
 const steps = n => `<div class="steps"><span class="fill" style="width:${n >= 3 ? 66.6 : n === 2 ? 33.3 : 0}%"></span>${['已出貨', '配送中', '到店'].map((s, i) => `<div class="${i < n ? 'on' : ''}"><i></i>${s}</div>`).join('')}</div>`;
 const orderLine = (o, right) => `<div class="row"><img class="thumb" src="${P[o.p].img}" alt=""><div class="grow"><div class="ellipsis" style="font-weight:500">${esc(P[o.p].n)}</div><div class="sub small" style="margin-top:3px">${esc(specText(o.spec))} x${o.qty}｜訂單末碼 ${o.no}</div><div class="small" style="margin-top:3px">${money(o.price * o.qty)}</div></div>${right || ''}</div>`;
 
@@ -113,7 +111,7 @@ V.results = () => { const list = results(), fc = filterCount(); return `<div cla
 ${list.length ? `<div class="pgrid" style="padding-top:12px">${list.map(k => pcard(k, true)).join('')}</div>` : `<div class="empty">${ic('search', 36)}<div>找不到符合的商品</div><button class="btn sm line" data-a="resetFilter">清除篩選與搜尋</button></div>`}
 </div>${tabbar('results')}</div>`; };
 
-const FILTERS = [['ship', '物流方式', ['7-11 取貨', '全家取貨', '宅配', '蝦皮店到店']], ['from', '出貨地', ['台灣', '海外']], ['cap', '容量', ['500ml 以下', '500–750ml']]];
+const FILTERS = [['from', '出貨地', ['台灣', '海外']], ['cap', '容量', ['500ml 以下', '500–750ml']]];
 V.filter = () => { const f = ui.filter; return `<div class="side" role="dialog" aria-label="篩選"><div style="height:36px"></div><div class="row" style="padding:4px 8px 8px 16px"><b class="grow" style="font-size:18px">篩選</b><button class="ib" data-a="back" aria-label="關閉">${ic('x')}</button></div>
 <div class="body" style="padding:0 16px 16px"><div class="stack" style="gap:18px">
 ${FILTERS.map(([k, t, o]) => `<div class="stack" style="gap:10px"><b>${t}</b><div class="chips">${o.map(c => `<button class="chip ${f[k].includes(c) ? 'on' : ''}" data-a="fchip" data-k="${k}" data-v="${c}" aria-pressed="${f[k].includes(c)}">${c}</button>`).join('')}</div></div>`).join('')}
@@ -122,7 +120,7 @@ ${FILTERS.map(([k, t, o]) => `<div class="stack" style="gap:10px"><b>${t}</b><di
 </div></div>
 <div class="foot row" style="gap:10px"><button class="btn line" data-a="resetFilter">重設</button><button class="btn" data-a="applyFilter">套用（${results().length} 件）</button></div></div>`; };
 
-V.product = k => { const p = P[k], liked = S.likes.includes(k), st = shipStore(), mine = S.reviews.filter(r => r.p === k);
+V.product = k => { const p = P[k], liked = S.likes.includes(k), mine = S.reviews.filter(r => r.p === k);
   const revs = [...mine.map(r => ({ u: 'Amber', s: r.stars, t: r.text || '（沒有留下文字）', spec: specText(r.spec) })), { u: 'k***9', s: 5, t: '很保溫，早上裝的熱水下班還是熱的。', spec: p.opt.map(o => o.v[0]).join('｜') }, { u: 'm***a', s: 4, t: '超商取貨很方便，到店有通知。', spec: p.opt.map(o => o.v[o.v.length - 1]).join('｜') }];
   return `<div class="scr"><div class="body">
 <div style="position:relative"><img src="${p.img}" alt="${esc(p.n)}" style="width:100%;aspect-ratio:1/0.95;object-fit:cover;display:block">
@@ -131,8 +129,8 @@ V.product = k => { const p = P[k], liked = S.likes.includes(k), st = shipStore()
 <div style="background:#fff;padding:14px 16px" class="stack"><div class="row" style="gap:8px"><span class="price" style="font-size:24px">${money(p.price)}</span><span class="tag">免運</span></div>
  <div class="row" style="align-items:flex-start"><div class="grow" style="font-size:15px;line-height:1.5">${esc(p.desc)}</div><button data-a="like" data-k="${k}" aria-pressed="${liked}" aria-label="喜歡" style="color:${liked ? 'var(--o)' : 'var(--sub)'}">${ic('heart', 24, liked ? 'fill:var(--o)' : '')}</button></div>
  <div class="row small" style="gap:6px"><span style="color:var(--gold)">★★★★★</span><span class="sub">${p.rate}｜已售 ${p.sold}</span></div></div>
-<button class="row press" data-a="go" data-r="storepick/product" style="background:#fff;margin-top:8px;padding:14px 16px;width:100%"><span style="color:var(--ok);display:flex">${ic('truck', 22)}</span>
- <div class="grow"><div class="sub small">${favOf(st) ? '寄到常用門市' : '寄到'}</div><div class="row" style="gap:8px;margin:2px 0"><b class="ellipsis">${STORES[st].n}</b>${storeTag(st)}</div><div class="small" style="color:var(--ok)">今天下單，預計 ${dayLabel(S.day + 2)} 到店，到店會通知你</div></div><span class="chev">${ic('right')}</span></button>
+<div class="row" style="background:#fff;margin-top:8px;padding:14px 16px;align-items:flex-start"><span style="color:var(--ok);display:flex">${ic('truck', 22)}</span>
+ <div class="grow"><div class="sub small">運送</div><div style="margin:2px 0">超商取貨、宅配｜運費 $60</div><div class="small sub">結帳時再選取件門市</div></div></div>
 <button class="row press" data-a="go" data-r="spec/${k}/buy" style="background:#fff;margin-top:8px;padding:14px 16px;width:100%;font-size:13px"><span class="sub">規格</span><span class="grow">${p.opt.map(o => o.v.join('、')).join('｜')}</span><span class="chev">${ic('right')}</span></button>
 <button class="row press" data-a="go" data-r="chat/${p.shop}" style="background:#fff;margin-top:8px;padding:14px 16px;width:100%"><span class="icon-circle" style="background:var(--bg);color:var(--o)">${ic('store', 22)}</span><div class="grow"><b>${SHOPS[p.shop].n}</b><div class="sub small">通常 1 小時內回覆</div></div><span class="btn sm line">聊聊</span></button>
 <div style="background:#fff;margin-top:8px;padding:14px 16px" class="stack"><div class="row"><b class="grow">商品評價（${revs.length}）</b><span style="color:var(--gold)">★ ${p.rate}</span></div>
@@ -163,11 +161,10 @@ function coCalc() { const c = ui.co, sub = c.items.reduce((a, i) => a + i.price 
   const shipCp = cps.find(x => x.kind === 'ship'); const cash = c.coupon ? cps.find(x => x.uid === c.coupon) : null;
   const ship = shipCp ? 0 : 60, off = cash && sub >= cash.min ? cash.off : 0, coin = c.coins ? Math.min(12, S.coins) : 0;
   return { sub, ship, shipCp, off, coin, cps, total: Math.max(0, sub + ship - off - coin) }; }
-V.checkout = () => { const c = ui.co; if (!c) return V.home(); const st = c.store, k = coCalc(), f = favOf(st), dfl = defaultFav();
-  const auto = dfl && st === dfl.store; return `<div class="scr">${hdr('結帳')}<div class="body"><div class="stack pad">
+V.checkout = () => { const c = ui.co; if (!c) return V.home(); const st = c.store, k = coCalc(), f = favOf(st); return `<div class="scr">${hdr('結帳')}<div class="body"><div class="stack pad">
 <button class="card row press" data-a="go" data-r="storepick/checkout" style="padding:14px;width:100%;align-items:flex-start"><span style="color:var(--o);display:flex">${ic('pin', 20)}</span>
- <div class="grow"><div class="sub small">取件門市</div><div class="row wrap" style="gap:8px;margin:2px 0"><b style="font-size:15px">${STORES[st].n}</b>${f ? `<span class="tag ${labelStyle(f.label).cls}">${esc(f.label)}｜常用</span>` : ''}</div><div class="sub small">${STORES[st].addr}</div>
- ${auto ? `<div class="tag ok" style="margin-top:8px">${isWeekend(S.day) ? '週末' : '平日'}下單，已自動帶入${esc(dfl.label)}門市，可點此更換</div>` : ''}</div><span class="chev">${ic('right')}</span></button>
+ <div class="grow"><div class="sub small">取件門市</div><div class="row wrap" style="gap:8px;margin:2px 0"><b style="font-size:15px">${STORES[st].n}</b>${f ? `<span class="tag ${labelStyle(f.label).cls}">${esc(f.label)}</span>` : ''}</div><div class="sub small">${STORES[st].addr}</div>
+ <div class="small" style="color:var(--o);margin-top:6px">上次寄這家，點此更換</div></div><span class="chev">${ic('right')}</span></button>
 <div class="card stack" style="padding:12px">${c.items.map(i => `<div class="row"><img class="thumb" src="${P[i.p].img}" alt=""><div class="grow"><div class="ellipsis" style="font-weight:500">${esc(P[i.p].n)}</div><div class="sub small">${esc(specText(i.spec))}</div><div class="row" style="justify-content:space-between;margin-top:4px"><span class="price" style="font-size:15px">${money(i.price)}</span><span class="sub small">x${i.qty}</span></div></div></div>`).join('<div class="divider"></div>')}</div>
 <div class="card" style="padding:6px 14px"><b style="display:block;padding:8px 0 4px">付款方式</b>${Object.entries(PAY).map(([key, [i, l]]) => { const dis = key === 'wallet' && S.wallet < k.total; return `<button class="row" data-a="pay" data-v="${key}" ${dis ? 'disabled style="opacity:.45;padding:10px 0;width:100%"' : 'style="padding:10px 0;width:100%"'}>${ic(i, 20)}<span class="grow">${l}${key === 'wallet' ? `（餘額 ${money(S.wallet)}）` : ''}</span><span class="radio ${c.pay === key ? 'on' : ''}"></span></button>`; }).join('')}</div>
 <div class="card" style="padding:6px 14px">
@@ -178,7 +175,7 @@ V.checkout = () => { const c = ui.co; if (!c) return V.home(); const st = c.stor
  <div class="kv"><span class="sub">預計到店</span><span>${dayLabel(S.day + 2)}</span></div></div>
 </div></div><div class="foot row"><div class="grow"><div class="sub small">總付款金額</div><div class="price" style="font-size:20px">${money(k.total)}</div></div><button class="btn" data-a="placeOrder" style="width:140px">下訂單</button></div></div>`; };
 
-V.storepick = ctx => { const q = ui.storeQ.trim(); const cur = ctx === 'checkout' ? ui.co?.store : ctx === 'product' ? shipStore() : ctx.startsWith('fav:') ? S.favs.find(f => f.id === ctx.slice(4))?.store : null;
+V.storepick = ctx => { const q = ui.storeQ.trim(); const cur = ctx === 'checkout' ? ui.co?.store : ctx.startsWith('fav:') ? S.favs.find(f => f.id === ctx.slice(4))?.store : null;
   const match = s => !q || STORES[s].n.includes(q) || STORES[s].addr.includes(q);
   const others = Object.keys(STORES).filter(s => !favOf(s) && match(s));
   const row = (s, sub) => `<button class="card row press" data-a="pickStore" data-s="${s}" data-ctx="${ctx}" style="padding:14px;width:100%;${cur === s ? 'box-shadow:inset 0 0 0 1.5px var(--o)' : ''}">${storeIcon(s)}<div class="grow"><div class="row" style="gap:8px"><b class="ellipsis" style="font-size:15px">${STORES[s].n}</b>${storeTag(s)}</div><div class="sub small" style="margin-top:3px">${sub}</div></div><span class="radio ${cur === s ? 'on' : ''}"></span></button>`;
@@ -209,19 +206,22 @@ ${t === 'ready' ? (n ? `<div class="sub small" style="margin:0 4px">依門市分
    <button class="row press" data-a="go" data-r="storelist/${s}" style="width:100%">${storeIcon(s)}<div class="grow"><div class="row" style="gap:8px"><b class="ellipsis" style="font-size:16px">${STORES[s].n}</b>${storeTag(s)}</div><div class="sub small" style="margin-top:2px">${os.length} 件可取｜期限 ${fmtDay(Math.min(...os.map(o => o.deadline)))}</div></div><span class="chev">${ic('right')}</span></button>
    <div class="divider"></div>
    <button class="row" data-a="go" data-r="storelist/${s}" style="gap:8px">${os.slice(0, 4).map(o => `<img class="thumb" style="width:56px;height:56px" src="${P[o.p].img}" alt="${esc(P[o.p].n)}">`).join('')}<span style="margin-left:6px;font-weight:500">共 ${os.length} 件</span></button>
-   <button class="btn" data-a="go" data-r="barcode/${s}">出示整合條碼（${os.length} 件）</button></div>`).join('')}`
+   <div class="row" style="gap:8px"><button class="btn line" data-a="go" data-r="storelist/${s}">到店拿貨清單</button><button class="btn" data-a="go" data-r="barcode/${s}">出示條碼</button></div></div>`).join('')}`
    : `<div class="card empty">${ic('checkCircle', 40, 'color:var(--ok)')}<div>目前沒有可取貨的包裹</div>${ship.length ? `<div class="small">${ship.length} 件運送中，到店會通知你</div>` : ''}</div>`)
  : (ship.length ? ship.map(o => `<div class="card pad stack"><div class="row" style="gap:8px"><span class="sub" style="display:flex">${ic('store', 20)}</span><b class="ellipsis">${STORES[o.store].n}</b>${storeTag(o.store)}</div>${orderLine(o, '<span class="tag grey round">運送中</span>')}${steps(2)}<div style="font-weight:500;font-size:13px">預計 ${dayLabel(o.eta)} 到店</div></div>`).join('') : `<div class="card empty">沒有運送中的包裹</div>`)}
 ${S.notifyOn && t === 'ready' ? `<div class="tip">${ic('bell')}<span>包裹到店會推播，點通知可直接開條碼</span></div>` : ''}
 </div></div>${tabbar('pickup')}</div>`; };
 
-V.storelist = s => { const os = byStatus('ready').filter(o => o.store === s), got = os.filter(o => S.picked[o.id]).length, dl = os.length ? Math.min(...os.map(o => o.deadline)) : 0;
-  return `<div class="scr">${hdr(STORES[s].n)}<div class="body">
- <div style="background:#fff;padding:12px 16px" class="stack small"><div class="row" style="gap:8px">${ic('pin', 18)}${STORES[s].addr}</div><div class="row" style="gap:8px">${ic('clock', 18)}${STORES[s].hours}</div>${os.length ? `<div class="row" style="gap:8px;color:var(--o);font-weight:500">${ic('info', 18)}取件期限 ${fmtDay(dl)}，剩 ${dl - S.day} 天</div>` : ''}</div>
- <div class="stack pad">${os.length ? `<div class="row" style="margin:4px 4px 0"><b class="grow" style="font-size:15px">本店包裹（${os.length}）</b><span class="sub small">拿到就打勾</span></div>
-  ${os.map(o => `<button class="card press" data-a="got" data-id="${o.id}" style="padding:12px;width:100%" role="checkbox" aria-checked="${!!S.picked[o.id]}">${orderLine(o, `<span class="check ${S.picked[o.id] ? 'on' : ''}">${S.picked[o.id] ? ic('check', 18) : ''}</span>`)}</button>`).join('')}
-  <div style="font-weight:700;color:${got === os.length ? 'var(--ok)' : 'var(--o)'};margin:0 4px">${got === os.length ? `${os.length} 件都拿到了` : `已拿 ${got} / ${os.length} 件`}</div>` : `<div class="card empty">這家門市沒有待取的包裹</div>`}</div>
-</div>${os.length ? `<div class="foot"><button class="btn" data-a="go" data-r="barcode/${s}">出示整合條碼（${os.length} 件）</button></div>` : ''}</div>`; };
+const otherStores = s => [...new Set(S.orders.filter(o => (o.status === 'ready' || o.status === 'ship') && o.store !== s).map(o => o.store))].map(x => ({ s: x, r: byStatus('ready').filter(o => o.store === x).length, w: byStatus('ship').filter(o => o.store === x).length }));
+V.storelist = s => { const os = byStatus('ready').filter(o => o.store === s), got = os.filter(o => S.picked[o.id]).length, dl = os.length ? Math.min(...os.map(o => o.deadline)) : 0, oth = otherStores(s);
+  return `<div class="scr">${hdr('到店拿貨清單')}<div class="body">
+ <div style="background:#fff;padding:12px 16px" class="stack small"><div class="row" style="gap:8px">${storeIcon(s)}<div class="grow"><div class="row" style="gap:8px"><b style="font-size:16px">${STORES[s].n}</b>${storeTag(s)}</div><div class="sub" style="margin-top:2px">${STORES[s].addr}｜${STORES[s].hours}</div></div></div>${os.length ? `<div class="row" style="gap:8px;color:var(--o);font-weight:500">${ic('info', 18)}取件期限 ${fmtDay(dl)}，剩 ${dl - S.day} 天</div>` : ''}</div>
+ <div class="stack pad">${os.length ? `<div class="row" style="margin:4px 4px 0"><b class="grow" style="font-size:15px">這家店要拿 ${os.length} 件</b><span class="sub small">從貨架拿一件，勾一件</span></div>
+  ${os.map(o => `<button class="card press" data-a="got" data-id="${o.id}" style="padding:12px;width:100%;${S.picked[o.id] ? 'opacity:.6' : ''}" role="checkbox" aria-checked="${!!S.picked[o.id]}">${orderLine(o, `<span class="check ${S.picked[o.id] ? 'on' : ''}">${S.picked[o.id] ? ic('check', 18) : ''}</span>`)}<div class="row small" style="gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">${ic('package', 16)}<span>外包裝：<b>${esc(P[o.p].pack)}</b></span></div></button>`).join('')}
+  <div style="font-weight:700;color:${got === os.length ? 'var(--ok)' : 'var(--o)'};margin:0 4px">${got === os.length ? `${os.length} 件都拿齊了` : `已拿 ${got} / ${os.length} 件`}</div>` : `<div class="card empty">這家門市沒有待取的包裹</div>`}
+ ${oth.length ? `<div class="sec-t" style="margin-top:8px">不在這家店</div>${oth.map(x => `<button class="card row press" data-a="go" data-r="storelist/${x.s}" style="padding:12px 14px;width:100%;background:#FAFAFA">${storeIcon(x.s)}<div class="grow"><div class="row" style="gap:8px"><span class="ellipsis" style="font-weight:500">${STORES[x.s].n}</span>${storeTag(x.s)}</div><div class="sub small" style="margin-top:2px">${[x.r ? x.r + ' 件可取' : '', x.w ? x.w + ' 件運送中' : ''].filter(Boolean).join('、')}，別在這裡找</div></div><span class="chev">${ic('right')}</span></button>`).join('')}` : ''}
+ </div>
+</div>${os.length ? `<div class="foot"><button class="btn" data-a="toBarcode" data-s="${s}">${got === os.length ? `拿齊了，出示條碼（${os.length} 件）` : `出示條碼（已拿 ${got} / ${os.length}）`}</button></div>` : ''}</div>`; };
 
 V.barcode = s => { const os = byStatus('ready').filter(o => o.store === s);
   if (!os.length) return `<div class="scr">${hdr('取件條碼')}<div class="body"><div class="card empty" style="margin:12px">${ic('checkCircle', 40, 'color:var(--ok)')}<div>${STORES[s].n} 目前沒有待取的包裹</div><button class="btn sm" data-a="tab" data-r="pickup">回取件中心</button></div></div></div>`;
@@ -268,6 +268,7 @@ V.me = () => { const cnt = st => byStatus(st).length; return `<div class="scr"><
 <div style="display:grid;grid-template-columns:repeat(5,1fr)">${[['wallet', '待付款', 'pay'], ['package', '待出貨', 'prep'], ['truck', '運送中', 'ship'], ['store', '可取貨', 'ready'], ['star', '待評價', 'rate']].map(([i, l, t]) => { const b = t === 'rate' ? S.orders.filter(o => o.status === 'done' && !o.rated).length : cnt(t); return `<button data-a="go" data-r="orders/${t === 'rate' ? 'done' : t}" style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;position:relative;padding:4px 0">${ic(i)}${l}${b ? `<span class="badge" style="right:10px">${b}</span>` : ''}</button>`; }).join('')}</div></div>
 <div class="card">${[['package', '取件中心', cnt('ready') ? cnt('ready') + ' 件可取貨' : '沒有待取包裹', 'tab:pickup', !!cnt('ready')], ['building', '常用門市', S.favs.map(f => f.label).join('、'), 'stores'], ['heart', '我的按讚', S.likes.length + ' 件', 'likes'], ['chat', '聊聊', '', 'chats']].map(([i, l, s, r, hot]) => `<button class="menu-row" data-a="${r.startsWith('tab:') ? 'tab' : 'go'}" data-r="${r.replace('tab:', '')}">${ic(i)}<span class="grow">${l}</span><span class="small" style="color:${hot ? 'var(--o)' : 'var(--sub)'}">${esc(s)}</span><span class="chev">${ic('right', 20)}</span></button>`).join('')}</div>
 <div class="card">${[['coins', '蝦幣', S.coins.toLocaleString(), 'coins'], ['wallet', '蝦皮錢包', money(S.wallet), 'wallet'], ['ticket', '優惠券', S.coupons.filter(c => !c.used).length + ' 張可用', 'coupons'], ['bell', '通知設定', S.notifyOn ? '到店通知開啟' : '到店通知關閉', 'tab:notifs']].map(([i, l, s, r]) => `<button class="menu-row" data-a="${r.startsWith('tab:') ? 'tab' : 'go'}" data-r="${r.replace('tab:', '')}">${ic(i)}<span class="grow">${l}</span><span class="small sub">${s}</span><span class="chev">${ic('right', 20)}</span></button>`).join('')}</div>
+<button class="card menu-row" data-a="go" data-r="research">${ic('info')}<span class="grow">研究背景：受訪者與 Persona</span><span class="chev">${ic('right', 20)}</span></button>
 <button class="card menu-row" data-a="go" data-r="menu">${ic('menu')}<span class="grow">原型說明與示範工具</span><span class="chev">${ic('right', 20)}</span></button>
 </div></div>${tabbar('me')}</div>`; };
 
@@ -296,9 +297,7 @@ V.stores = () => `<div class="scr">${hdr('常用門市')}<div class="body"><div 
 ${S.favs.map(f => `<div class="card row" style="padding:14px">${storeIcon(f.store)}<div class="grow"><div class="row" style="gap:8px"><b class="ellipsis" style="font-size:15px">${STORES[f.store].n}</b><span class="tag ${labelStyle(f.label).cls}">${esc(f.label)}</span></div><div class="sub small" style="margin-top:3px">${STORES[f.store].addr}</div></div>
  <button class="ib" data-a="go" data-r="storepick/fav:${f.id}" aria-label="更換${esc(f.label)}門市" style="color:var(--sub)">${ic('edit', 20)}</button>${S.favs.length > 1 ? `<button class="ib" data-a="favDel" data-id="${f.id}" aria-label="刪除${esc(f.label)}門市" style="color:var(--sub)">${ic('trash', 20)}</button>` : ''}</div>`).join('')}
 <button class="row" data-a="go" data-r="storeadd" style="justify-content:center;height:48px;border:1.5px dashed #C9C9C9;border-radius:12px;color:var(--sub);gap:6px;width:100%">${ic('plus', 20)}新增常用門市（學校等）</button>
-<div class="sec-t">結帳預設</div>
-<div class="card" style="padding:4px 16px">${[['weekday', '平日下單（一～五）'], ['weekend', '週末下單（六、日）']].map(([k, l], i) => `${i ? '<div class="divider"></div>' : ''}<label class="kv" style="padding:12px 0"><span>${l}</span><select data-ch="default" data-k="${k}" style="border:0;background:none;color:var(--o);font-weight:700;text-align:right">${S.favs.map(f => `<option value="${f.id}" ${S.defaults[k] === f.id ? 'selected' : ''}>寄到${esc(f.label)}門市</option>`).join('')}</select></label>`).join('')}</div>
-<div class="sub small" style="margin:0 4px;line-height:1.6">今天是 ${dayLabel(S.day)}，結帳會自動帶入${esc(defaultFav()?.label || '')}門市</div>
+<div class="sub small" style="margin:0 4px;line-height:1.6">幫門市取名（公司、住家、學校），取件中心和結帳都會標出來，一眼分清楚是哪一家</div>
 </div></div></div>`;
 
 V.storeadd = () => `<div class="scr">${hdr('新增常用門市')}<div class="body"><div class="stack pad">
@@ -353,7 +352,20 @@ ${n && live ? `<div class="pulse"><button class="notif tap press" data-a="openNo
 <div style="text-align:center;font-size:12px;opacity:.8;padding:24px 0 18px">點蝦皮通知會直接打開 App 的取件條碼頁</div>
 </div></div>`; };
 
-const TASKS = [['home', '情境一', '從首頁看今天能拿幾件，到信義公司門市出示條碼'], ['search', '情境二', '搜尋保溫瓶，寄到常用門市並下訂單'], ['lock', '情境三', '收到到店推播，點通知直接出示整合條碼取件'], ['me', '自由瀏覽', '我的、購買清單、通知、常用門市']];
+V.research = () => { const R = RESEARCH; return `<div class="scr">${hdr('研究背景')}<div class="body"><div class="stack pad">
+<div class="sub small" style="margin:0 4px;line-height:1.6">${R.method}</div>
+<div class="sec-t">三位受訪者</div>
+${R.people.map(p => `<div class="card pad stack" style="gap:8px"><div class="row" style="gap:10px"><span class="icon-circle" style="background:var(--o-soft);color:var(--o)">${ic(p.ic, 22)}</span><b class="grow" style="font-size:16px">${p.n}</b><span class="tag">${p.pain}</span></div>
+ <div style="font-weight:500;line-height:1.6">${p.q}</div><div class="sub small" style="line-height:1.6">${p.d}</div><div class="small" style="color:var(--ok);line-height:1.6">期待：${p.want}</div></div>`).join('')}
+<div class="sec-t">Persona</div>
+<div class="card pad stack" style="gap:10px"><div><b style="font-size:20px">${R.persona.n}</b><span class="sub small" style="margin-left:8px">${R.persona.meta}</span></div>
+ ${R.persona.rows.map(([k, v]) => `<div class="row" style="align-items:flex-start;gap:12px"><b style="color:var(--o);width:36px;flex:none">${k}</b><span style="line-height:1.6">${v}</span></div>`).join('')}
+ <div class="sub small">${R.persona.basis}</div></div>
+<div class="sec-t">同理心地圖｜Amber</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${R.empathy.map(([k, v]) => `<div class="card" style="padding:12px;${k === '痛點' ? 'background:var(--o-soft)' : k === '期待' ? 'background:var(--ok-soft)' : ''}"><b style="color:${k === '期待' ? 'var(--ok)' : 'var(--o)'}">${k}</b><div class="small" style="margin-top:4px;line-height:1.6">${v}</div></div>`).join('')}</div>
+</div></div></div>`; };
+
+const TASKS = [['home', '情境一', '從首頁分清楚哪些已到店、哪些還在運送中'], ['pickup', '情境二', '包裹分在公司和住家門市，到公司門市照清單逐件拿齊'], ['lock', '情境三', '收到到店推播，點通知直接出示整合條碼取件'], ['me', '自由瀏覽', '我的、購買清單、通知、常用門市'], ['research', '研究背景', '三位受訪者、Persona Amber、同理心地圖']];
 const TOOLS = [['advance', 'play', '物流推進一天（運送中 → 到店並推播）'], ['showLock', 'bell', '切到鎖定畫面看推播'], ['reset', 'history', '重設所有資料']];
 V.menu = () => `<div class="scr" style="background:var(--desk)"><div class="body"><div class="stack" style="padding:calc(28px + env(safe-area-inset-top,0px)) 16px 24px;gap:12px">
 <h1 style="font-size:24px;margin:0">蝦皮取件體驗優化</h1><p class="sub" style="margin:0;line-height:1.7">可操作原型。選一個任務開始；要回到這裡，長按畫面最上方的橘色標題列，或到「我的 → 原型說明與示範工具」。</p>
@@ -400,9 +412,9 @@ function notify(n) { n.id = uid('n'); n.d = S.day; n.time = '18:' + String(10 + 
 const A = {
   back, go: d => go(d.r), tab: d => { if (d.r === 'pickup') ui.pickTab = 'ready'; tab(d.r); },
   tabTo: d => setStack([d.r.startsWith('orders') ? 'me' : 'home', d.r]),
-  start: d => { if (d.r === 'search') { ui.q = ''; setStack(['home', 'search']); } else setStack([d.r]); },
+  start: d => { S.picked = {}; ui.pickTab = 'ready'; setStack(d.r === 'research' ? ['home', 'research'] : [d.r]); },
   toast: d => toast(d.v),
-  direct: () => { ui.filter = blankFilter(); ui.filter.ship = ['蝦皮店到店']; ui.q = ''; tab('results'); },
+  direct: () => { ui.filter = blankFilter(); ui.q = ''; tab('results'); },
   doSearch: d => doSearch(d.q), clearHistory: () => { S.history = []; render(); }, clearQ: () => { ui.q = ''; render(); },
   sort: d => { ui.sort = d.v; render(); },
   fchip: d => { const a = ui.filter[d.k], i = a.indexOf(d.v); i < 0 ? a.push(d.v) : a.splice(i, 1); readPrice(); render(); },
@@ -427,6 +439,9 @@ const A = {
   pickTab: d => { ui.pickTab = d.v; render(); },
   got: d => { S.picked[d.id] = !S.picked[d.id]; render(); },
   pickedAll: d => pickedAll(d.s),
+  toBarcode: d => { const miss = byStatus('ready').filter(o => o.store === d.s && !S.picked[o.id]); if (!miss.length) { go('barcode/' + d.s); return; }
+    ui.dialog = `<div class="dialog" role="alertdialog" aria-label="還有包裹沒拿"><b style="font-size:17px">還有 ${miss.length} 件沒打勾</b><div class="stack" style="gap:8px">${miss.map(o => `<div class="row small" style="gap:10px"><img class="thumb" style="width:44px;height:44px" src="${P[o.p].img}" alt=""><div class="grow"><div class="ellipsis" style="font-weight:500">${esc(P[o.p].n)}</div><div class="sub">外包裝：${esc(P[o.p].pack)}</div></div></div>`).join('')}</div><div class="row" style="gap:10px"><button class="btn line" data-a="closeDialog">回去找</button><button class="btn" data-a="goDialog" data-r="barcode/${d.s}">都拿了</button></div></div>`; render(); },
+  goDialog: d => go(d.r),
   star: d => { ui.stars[d.id] = +d.n; render(); },
   submitReview,
   notifTab: d => { ui.notifTab = d.v; render(); },
@@ -439,13 +454,13 @@ const A = {
   cancelAsk: d => { ui.dialog = `<div class="dialog" role="alertdialog" aria-label="取消訂單"><b style="font-size:17px">確定要取消這筆訂單嗎？</b><div class="sub" style="line-height:1.6">取消後無法復原，已付款的金額會退回蝦皮錢包。</div><div class="row" style="gap:10px"><button class="btn line" data-a="closeDialog">再想想</button><button class="btn" data-a="cancelOrder" data-id="${d.id}">確定取消</button></div></div>`; render(); },
   closeDialog: () => { ui.dialog = null; render(); },
   cancelOrder: d => { const o = S.orders.find(x => x.id === d.id); if (o.paid) S.wallet += o.price * o.qty; o.status = 'cancel'; ui.dialog = null; render(); toast('訂單已取消'); },
-  favDel: d => { const f = S.favs.find(x => x.id === d.id); S.favs = S.favs.filter(x => x.id !== d.id); ['weekday', 'weekend'].forEach(k => { if (S.defaults[k] === d.id) S.defaults[k] = S.favs[0].id; }); render(); toast(`已刪除${f.label}門市`); },
+  favDel: d => { const f = S.favs.find(x => x.id === d.id); S.favs = S.favs.filter(x => x.id !== d.id); render(); toast(`已刪除${f.label}門市`); },
   addLabel: d => { ui.addLabel = d.v; render(); },
   addNext: () => { if (ui.addLabel === '其他' && !ui.addCustom.trim()) { toast('請先輸入自訂名稱'); return; } ui.storeQ = ''; go('storepick/add'); },
   quickMsg: d => sendMsg(d.k, d.v),
   topup: d => { S.wallet += +d.v; render(); toast(`已儲值 ${money(+d.v)}`); },
   claim: d => { S.coupons.push({ id: uid('u'), ref: d.id, used: false }); render(); toast('已領取，結帳時會自動套用'); },
-  advance, showLock: () => setStack(['lock']), reset: () => { S = initialState(); Object.assign(ui, { q: '', filter: blankFilter(), co: null, sel: null, preferStore: null, dialog: null }); setStack(['home']); toast('資料已重設'); },
+  advance, showLock: () => setStack(['lock']), reset: () => { S = initialState(); Object.assign(ui, { q: '', filter: blankFilter(), co: null, sel: null, dialog: null }); setStack(['home']); toast('資料已重設'); },
 };
 
 function readPrice() { const a = document.getElementById('pmin'), b = document.getElementById('pmax'); if (a) ui.filter.min = a.value.replace(/\D/g, ''); if (b) ui.filter.max = b.value.replace(/\D/g, ''); }
@@ -453,7 +468,6 @@ function doSearch(q) { q = q.trim(); ui.q = q; if (q) S.history = [q, ...S.histo
 function startCheckout(items, cartIds) { ui.co = { items, cartIds, store: shipStore(), pay: 'cod', coins: false, coupon: null }; go('checkout'); }
 function pickStore(s, ctx) {
   if (ctx === 'checkout') ui.co.store = s;
-  else if (ctx === 'product') ui.preferStore = s;
   else if (ctx.startsWith('fav:')) { const f = S.favs.find(x => x.id === ctx.slice(4)); f.store = s; }
   else if (ctx === 'add') { const label = ui.addLabel === '其他' ? ui.addCustom.trim() : ui.addLabel; const ex = S.favs.find(f => f.label === label);
     if (ex) ex.store = s; else S.favs.push({ id: uid('f'), label, store: s }); ui.addCustom = '';
@@ -469,7 +483,7 @@ function placeOrder() {
   if (k.coin) { S.coins -= k.coin; S.coinLog.push({ t: '結帳折抵', v: -k.coin, d: S.day }); }
   if (c.pay === 'wallet') S.wallet -= k.total;
   if (c.cartIds) S.cart = S.cart.filter(x => !c.cartIds.includes(x.id));
-  ui.lastOrder = ids; ui.co = null; ui.preferStore = null; setStack(['home', 'ordered']);
+  S.lastStore = c.store; ui.lastOrder = ids; ui.co = null; setStack(['home', 'ordered']);
 }
 function pickedAll(s) {
   const os = byStatus('ready').filter(o => o.store === s); os.forEach(o => { o.status = 'done'; o.picked = S.day; o.rated = false; delete S.picked[o.id]; });
@@ -515,7 +529,6 @@ app.addEventListener('input', e => { const t = e.target;
 });
 app.addEventListener('change', e => { const t = e.target;
   if (t.dataset.ch === 'coupon') { ui.co.coupon = t.value || null; render(); }
-  if (t.dataset.ch === 'default') { S.defaults[t.dataset.k] = t.value; render(); toast('已更新結帳預設'); }
 });
 let lp; app.addEventListener('pointerdown', e => { if (e.target.closest('.sb,.hdr') && !e.target.closest('button,input')) lp = setTimeout(() => setStack(['menu']), 700); });
 ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => app.addEventListener(t, () => clearTimeout(lp)));
