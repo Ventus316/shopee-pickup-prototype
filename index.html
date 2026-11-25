@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EE4D2D">
+<meta name="description" content="蝦皮取件體驗優化的可操作原型：今日待取、依門市分組的取件中心、推播直達整合條碼。">
+<title>蝦皮取件原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="stage">
+  <aside class="panel" id="panel">
+    <h1>蝦皮取件體驗優化</h1>
+    <p>可操作原型。選一個任務開始，右邊的手機畫面跟真的 App 一樣可以點。資料只存在這台瀏覽器。</p>
+    <h3>任務</h3>
+    <div class="tasks" id="tasks"></div>
+    <h3>示範工具 <span class="daytag" id="day"></span></h3>
+    <div class="tasks" id="tools"></div>
+  </aside>
+  <div class="phone"><main class="app" id="app" aria-live="polite"></main></div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
